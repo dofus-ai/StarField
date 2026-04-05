@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Starfield</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; }
+    canvas { display: block; }
+
+    #hud {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      user-select: none;
+    }
+    #hud h1 {
+      font-family: 'Courier New', monospace;
+      font-size: clamp(1.5rem, 5vw, 3.5rem);
+      color: #fff;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      text-shadow: 0 0 20px rgba(100,180,255,0.8), 0 0 60px rgba(100,180,255,0.4);
+      animation: pulse 4s ease-in-out infinite;
+    }
+    #hud p {
+      font-family: 'Courier New', monospace;
+      font-size: clamp(0.6rem, 2vw, 0.85rem);
+      color: rgba(150, 200, 255, 0.6);
+      letter-spacing: 0.2em;
+      margin-top: 1rem;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    #status {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      color: rgba(80, 200, 120, 0.7);
+      letter-spacing: 0.15em;
+    }
+    #status span {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      background: #4ade80;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: blink 2s ease-in-out infinite;
+      box-shadow: 0 0 6px #4ade80;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div id="hud">
+    <h1>Starfield</h1>
+    <p>WARP SPEED ENGAGED &mdash; SYSTEMS NOMINAL</p>
+  </div>
+
+  <div id="status"><span></span>ONLINE &nbsp;/up</div>
+
+  <script>
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d");
+
+    let W, H, cx, cy;
+    const STAR_COUNT = 600;
+    const SPEED = 3.5;
+    const MAX_DEPTH = 1000;
+
+    const stars = [];
+
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      cx = W / 2;
+      cy = H / 2;
+    }
+
+    function randomStar() {
+      return {
+        x: (Math.random() - 0.5) * W * 3,
+        y: (Math.random() - 0.5) * H * 3,
+        z: Math.random() * MAX_DEPTH,
+        pz: 0,
+      };
+    }
+
+    function init() {
+      stars.length = 0;
+      for (let i = 0; i < STAR_COUNT; i++) {
+        const s = randomStar();
+        s.pz = s.z; // start with pz == z so no streak on frame 0
+        stars.push(s);
+      }
+    }
+
+    function project(x, y, z) {
+      const scale = MAX_DEPTH / z;
+      return {
+        sx: x * scale + cx,
+        sy: y * scale + cy,
+        r: Math.max(0.3, (1 - z / MAX_DEPTH) * 2.5),
+      };
+    }
+
+    function draw() {
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.fillRect(0, 0, W, H);
+
+      for (const s of stars) {
+        const prev = project(s.x, s.y, s.pz);
+        s.pz = s.z;
+        s.z -= SPEED;
+
+        if (s.z <= 1) {
+          Object.assign(s, randomStar());
+          s.z = MAX_DEPTH;
+          s.pz = MAX_DEPTH;
+          continue;
+        }
+
+        const cur = project(s.x, s.y, s.z);
+
+        // skip stars outside viewport
+        if (cur.sx < 0 || cur.sx > W || cur.sy < 0 || cur.sy > H) continue;
+
+        const brightness = 1 - s.z / MAX_DEPTH;
+        const alpha = Math.min(1, brightness * 1.5);
+
+        // streak
+        ctx.beginPath();
+        ctx.moveTo(prev.sx, prev.sy);
+        ctx.lineTo(cur.sx, cur.sy);
+        ctx.strokeStyle = `rgba(${lerp(120,255,brightness)},${lerp(160,255,brightness)},255,${alpha * 0.6})`;
+        ctx.lineWidth = cur.r * 0.8;
+        ctx.stroke();
+
+        // dot
+        ctx.beginPath();
+        ctx.arc(cur.sx, cur.sy, cur.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(200,230,255,${alpha})`;
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    function lerp(a, b, t) { return Math.round(a + (b - a) * t); }
+
+    window.addEventListener("resize", () => { resize(); init(); });
+    resize();
+    init();
+    draw();
+  </script>
+</body>
+</html>
