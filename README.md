@@ -1,6 +1,7 @@
 # StarField
 
-A simple containerized app that can be run with plain Docker from the command line
+A simple containerized app that can be run with plain Docker from the command line and serves a mockup starship dashboard with a 3D map
+
 
 ---
 
