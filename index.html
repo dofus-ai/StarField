@@ -1,172 +1,704 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Starfield</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #000; overflow: hidden; }
-    canvas { display: block; }
-
-    #hud {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-      pointer-events: none;
-      user-select: none;
-    }
-    #hud h1 {
-      font-family: 'Courier New', monospace;
-      font-size: clamp(1.5rem, 5vw, 3.5rem);
-      color: #fff;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      text-shadow: 0 0 20px rgba(100,180,255,0.8), 0 0 60px rgba(100,180,255,0.4);
-      animation: pulse 4s ease-in-out infinite;
-    }
-    #hud p {
-      font-family: 'Courier New', monospace;
-      font-size: clamp(0.6rem, 2vw, 0.85rem);
-      color: rgba(150, 200, 255, 0.6);
-      letter-spacing: 0.2em;
-      margin-top: 1rem;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
-
-    #status {
-      position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
-      font-family: 'Courier New', monospace;
-      font-size: 0.7rem;
-      color: rgba(80, 200, 120, 0.7);
-      letter-spacing: 0.15em;
-    }
-    #status span {
-      display: inline-block;
-      width: 7px;
-      height: 7px;
-      background: #4ade80;
-      border-radius: 50%;
-      margin-right: 6px;
-      animation: blink 2s ease-in-out infinite;
-      box-shadow: 0 0 6px #4ade80;
-    }
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>UES SOVEREIGNTY — TACTICAL BRIDGE</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+:root{--cyan:#00e5ff;--amber:#ffab00;--green:#00e676;--red:#ff1744;--yellow:#ffea00;--panel:rgba(0,20,35,0.82);--border:rgba(0,229,255,0.25);--text:#a0d8ef;--mono:'Share Tech Mono',monospace;--disp:'Orbitron',sans-serif;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#020d14;overflow:hidden;font-family:var(--mono);color:var(--text);user-select:none;}
+#bg{position:fixed;inset:0;z-index:0;}
+body::after{content:'';position:fixed;inset:0;z-index:999;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);}
+#hud{position:fixed;inset:0;z-index:10;display:grid;grid-template-columns:280px 1fr 280px;grid-template-rows:54px 1fr 50px;padding:8px;}
+.panel{background:var(--panel);border:1px solid var(--border);backdrop-filter:blur(6px);padding:12px;position:relative;overflow:hidden;}
+.panel::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(0,229,255,0.04) 0%,transparent 60%);}
+.pt{font-family:var(--disp);font-size:0.55rem;letter-spacing:0.22em;color:var(--cyan);text-transform:uppercase;margin-bottom:8px;opacity:0.8;display:flex;align-items:center;gap:6px;}
+.pt::before{content:'';display:inline-block;width:4px;height:4px;background:var(--cyan);border-radius:50%;box-shadow:0 0 6px var(--cyan);}
+.c{position:absolute;width:10px;height:10px;}
+.c.tl{top:0;left:0;border-top:2px solid var(--cyan);border-left:2px solid var(--cyan);}
+.c.tr{top:0;right:0;border-top:2px solid var(--cyan);border-right:2px solid var(--cyan);}
+.c.bl{bottom:0;left:0;border-bottom:2px solid var(--cyan);border-left:2px solid var(--cyan);}
+.c.br{bottom:0;right:0;border-bottom:2px solid var(--cyan);border-right:2px solid var(--cyan);}
+#topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--border);backdrop-filter:blur(6px);padding:0 20px;}
+.ship-name{font-family:var(--disp);font-size:0.9rem;font-weight:900;letter-spacing:0.3em;color:#fff;text-shadow:0 0 20px var(--cyan);}
+.ship-name span{color:var(--cyan);}
+.stardate{font-size:0.72rem;color:var(--cyan);opacity:0.65;}
+.alert-badge{font-family:var(--disp);font-size:0.6rem;font-weight:700;letter-spacing:0.2em;padding:4px 14px;border:1px solid currentColor;border-radius:2px;transition:all 0.5s;}
+.ag{color:var(--green);box-shadow:0 0 10px rgba(0,230,118,0.3);}
+.ay{color:var(--yellow);box-shadow:0 0 10px rgba(255,234,0,0.4);animation:py 1s infinite;}
+.ar{color:var(--red);box-shadow:0 0 10px rgba(255,23,68,0.5);animation:pr 0.6s infinite;}
+@keyframes py{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes pr{0%,100%{opacity:1}50%{opacity:0.2}}
+#bottombar{grid-column:1/-1;display:flex;align-items:center;gap:28px;background:var(--panel);border:1px solid var(--border);backdrop-filter:blur(6px);padding:0 20px;font-size:0.62rem;}
+.bs{display:flex;align-items:center;gap:7px;}
+.bsl{color:var(--cyan);opacity:0.45;letter-spacing:0.1em;text-transform:uppercase;font-size:0.52rem;}
+.bsv{color:var(--cyan);font-size:0.72rem;}
+#left,#right{display:flex;flex-direction:column;gap:6px;}
+.sb{margin-bottom:8px;}
+.sbh{display:flex;justify-content:space-between;font-size:0.58rem;margin-bottom:3px;}
+.sbn{letter-spacing:0.1em;color:rgba(160,216,239,0.65);}
+.sbv{font-family:var(--disp);font-size:0.62rem;font-weight:600;}
+.bt{height:5px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;}
+.bf{height:100%;border-radius:2px;transition:width 1.2s cubic-bezier(0.4,0,0.2,1);position:relative;}
+.bf::after{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;background:rgba(255,255,255,0.6);border-radius:2px;}
+.bc{background:linear-gradient(90deg,rgba(0,229,255,0.3),var(--cyan));}
+.bg{background:linear-gradient(90deg,rgba(0,230,118,0.3),var(--green));}
+.ba{background:linear-gradient(90deg,rgba(255,171,0,0.3),var(--amber));}
+.br2{background:linear-gradient(90deg,rgba(255,23,68,0.3),var(--red));}
+#center{display:flex;flex-direction:column;}
+#smpanel{flex:1;position:relative;border:1px solid var(--border);background:var(--panel);overflow:hidden;}
+#smpanel .c{z-index:2;}
+.smtitle{position:absolute;top:10px;left:12px;z-index:2;font-family:var(--disp);font-size:0.52rem;letter-spacing:0.2em;color:var(--cyan);opacity:0.75;pointer-events:none;display:flex;align-items:center;gap:6px;}
+.smtitle::before{content:'';display:inline-block;width:4px;height:4px;background:var(--cyan);border-radius:50%;box-shadow:0 0 6px var(--cyan);}
+.smhint{position:absolute;bottom:8px;left:12px;z-index:2;font-size:0.5rem;color:rgba(0,229,255,0.3);pointer-events:none;letter-spacing:0.1em;}
+#smcanvas{display:block;cursor:grab;}
+#smcanvas:active{cursor:grabbing;}
+.mg{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.mi{width:20px;height:26px;border:1px solid rgba(0,229,255,0.3);border-radius:3px 3px 5px 5px;background:linear-gradient(180deg,rgba(0,229,255,0.18),rgba(0,229,255,0.04));position:relative;transition:all 0.3s;}
+.mi::before{content:'';position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:5px;height:6px;background:var(--cyan);clip-path:polygon(50% 0%,0% 100%,100% 100%);box-shadow:0 0 6px var(--cyan);}
+.mi.spent{opacity:0.12;border-color:rgba(255,255,255,0.08);background:transparent;}
+.mi.spent::before{display:none;}
+.tg{display:flex;gap:4px;margin-top:4px;}
+.ti{flex:1;height:16px;border-radius:3px;background:linear-gradient(90deg,rgba(255,171,0,0.12),rgba(255,171,0,0.28));border:1px solid rgba(255,171,0,0.4);position:relative;transition:all 0.3s;}
+.ti::after{content:'';position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:3px solid transparent;border-bottom:3px solid transparent;border-left:4px solid rgba(255,171,0,0.55);}
+.ti.spent{opacity:0.12;background:transparent;}
+.le{font-size:0.57rem;line-height:1.9;color:rgba(160,216,239,0.5);border-bottom:1px solid rgba(0,229,255,0.05);animation:fi 0.3s ease;}
+.le .ts{color:rgba(0,229,255,0.35);margin-right:6px;}
+.le.warn{color:rgba(255,234,0,0.7);}
+.le.crit{color:rgba(255,23,68,0.8);}
+@keyframes fi{from{opacity:0;transform:translateX(5px)}to{opacity:1;transform:none}}
+.prw{display:flex;justify-content:center;margin:4px 0 2px;}
+</style>
 </head>
 <body>
-  <canvas id="c"></canvas>
-
-  <div id="hud">
-    <h1>Starfield</h1>
-    <p>WARP SPEED ENGAGED &mdash; SYSTEMS NOMINAL</p>
+<canvas id="bg"></canvas>
+<div id="hud">
+  <div id="topbar">
+    <div class="ship-name">UES <span>SOVEREIGNTY</span> &mdash; NCC·7741·Δ</div>
+    <div class="stardate" id="stardate">STARDATE 2847.332</div>
+    <div class="alert-badge ag" id="alert-badge">● GREEN ALERT</div>
   </div>
 
-  <div id="status"><span></span>ONLINE &nbsp;/up</div>
+  <div id="left">
+    <div class="panel" style="flex:0 0 auto;">
+      <div class="c tl"></div><div class="c tr"></div><div class="c bl"></div><div class="c br"></div>
+      <div class="pt">Shield Matrix</div>
+      <div style="display:flex;justify-content:center;margin:4px 0;">
+        <svg id="sh-svg" width="158" height="148" viewBox="0 0 158 148">
+          <polygon id="sh-f" points="79,10 128,53 79,73 30,53" fill="rgba(0,229,255,0.14)" stroke="rgba(0,229,255,0.55)" stroke-width="1.5"/>
+          <polygon id="sh-a" points="79,143 128,100 79,80 30,100" fill="rgba(0,229,255,0.14)" stroke="rgba(0,229,255,0.55)" stroke-width="1.5"/>
+          <polygon id="sh-p" points="5,76 30,53 48,76 30,100" fill="rgba(0,229,255,0.14)" stroke="rgba(0,229,255,0.55)" stroke-width="1.5"/>
+          <polygon id="sh-s" points="153,76 128,53 110,76 128,100" fill="rgba(0,229,255,0.14)" stroke="rgba(0,229,255,0.55)" stroke-width="1.5"/>
+          <ellipse cx="79" cy="76" rx="15" ry="20" fill="rgba(0,229,255,0.07)" stroke="rgba(0,229,255,0.45)" stroke-width="1"/>
+          <rect x="69" y="88" width="20" height="8" rx="2" fill="rgba(0,229,255,0.08)" stroke="rgba(0,229,255,0.35)" stroke-width="0.8"/>
+          <text x="79" y="6"   text-anchor="middle" fill="rgba(0,229,255,0.45)" font-size="7.5" font-family="Share Tech Mono">FWD</text>
+          <text x="79" y="147" text-anchor="middle" fill="rgba(0,229,255,0.45)" font-size="7.5" font-family="Share Tech Mono">AFT</text>
+          <text x="2"  y="79"  fill="rgba(0,229,255,0.45)" font-size="7.5" font-family="Share Tech Mono">P</text>
+          <text x="147" y="79" fill="rgba(0,229,255,0.45)" font-size="7.5" font-family="Share Tech Mono">S</text>
+          <text id="sf" x="79"  y="40"  text-anchor="middle" fill="#00e5ff" font-size="10" font-weight="bold" font-family="Share Tech Mono">100%</text>
+          <text id="sa" x="79"  y="118" text-anchor="middle" fill="#00e5ff" font-size="10" font-weight="bold" font-family="Share Tech Mono">100%</text>
+          <text id="sp" x="27"  y="79"  text-anchor="middle" fill="#00e5ff" font-size="9"  font-family="Share Tech Mono">100%</text>
+          <text id="ss" x="131" y="79"  text-anchor="middle" fill="#00e5ff" font-size="9"  font-family="Share Tech Mono">100%</text>
+        </svg>
+      </div>
+      <div class="sb">
+        <div class="sbh"><span class="sbn">SHIELD POWER</span><span class="sbv" id="spv" style="color:var(--cyan)">96%</span></div>
+        <div class="bt"><div class="bf bc" id="bsp" style="width:96%"></div></div>
+      </div>
+    </div>
+    <div class="panel" style="flex:1;">
+      <div class="pt">Ship Systems</div>
+      <div class="sb"><div class="sbh"><span class="sbn">HULL INTEGRITY</span><span class="sbv" id="hv" style="color:var(--green)">100%</span></div><div class="bt"><div class="bf bg" id="bhull" style="width:100%"></div></div></div>
+      <div class="sb"><div class="sbh"><span class="sbn">WARP CORE OUTPUT</span><span class="sbv" id="wv" style="color:var(--cyan)">87%</span></div><div class="bt"><div class="bf bc" id="bwarp" style="width:87%"></div></div></div>
+      <div class="sb"><div class="sbh"><span class="sbn">LIFE SUPPORT</span><span class="sbv" id="lv" style="color:var(--green)">100%</span></div><div class="bt"><div class="bf bg" id="blife" style="width:100%"></div></div></div>
+      <div class="sb"><div class="sbh"><span class="sbn">SENSOR ARRAY</span><span class="sbv" id="sv" style="color:var(--cyan)">94%</span></div><div class="bt"><div class="bf bc" id="bsen" style="width:94%"></div></div></div>
+      <div class="sb"><div class="sbh"><span class="sbn">DEFLECTOR DISH</span><span class="sbv" id="ddv" style="color:var(--cyan)">91%</span></div><div class="bt"><div class="bf bc" id="bdd" style="width:91%"></div></div></div>
+      <div class="sb"><div class="sbh"><span class="sbn">CLOAKING FIELD</span><span class="sbv" id="cv" style="color:var(--amber)">STANDBY</span></div><div class="bt"><div class="bf ba" id="bcloak" style="width:8%"></div></div></div>
+    </div>
+  </div>
 
-  <script>
-    const canvas = document.getElementById("c");
-    const ctx = canvas.getContext("2d");
+  <div id="center">
+    <div id="smpanel">
+      <div class="c tl"></div><div class="c tr"></div><div class="c bl"></div><div class="c br"></div>
+      <div class="smtitle">Navigational Starmap — Sector 7G · Orion Arm · 3D TACTICAL VIEW</div>
+      <div class="smhint">DRAG TO ORBIT &nbsp;·&nbsp; SCROLL TO ZOOM</div>
+      <canvas id="smcanvas"></canvas>
+    </div>
+  </div>
 
-    let W, H, cx, cy;
-    const STAR_COUNT = 600;
-    const SPEED = 3.5;
-    const MAX_DEPTH = 1000;
+  <div id="right">
+    <div class="panel" style="flex:0 0 auto;">
+      <div class="pt">Plasma Weapons</div>
+      <div class="prw">
+        <svg width="114" height="114" viewBox="0 0 114 114">
+          <circle cx="57" cy="57" r="48" fill="none" stroke="rgba(0,229,255,0.08)" stroke-width="10"/>
+          <circle id="parc" cx="57" cy="57" r="48" fill="none" stroke="url(#pg)" stroke-width="10"
+            stroke-dasharray="301" stroke-dashoffset="55" stroke-linecap="round" transform="rotate(-90 57 57)"
+            style="transition:stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1)"/>
+          <defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#00e5ff" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#00e5ff"/>
+          </linearGradient></defs>
+          <text x="57" y="51" text-anchor="middle" fill="#00e5ff" font-size="19" font-weight="700" font-family="Orbitron" id="ppct">84%</text>
+          <text x="57" y="65" text-anchor="middle" fill="rgba(160,216,239,0.45)" font-size="7" font-family="Share Tech Mono">CHARGE</text>
+          <text x="57" y="77" text-anchor="middle" fill="rgba(160,216,239,0.35)" font-size="6.5" font-family="Share Tech Mono" id="ptemp">TEMP 3842K</text>
+        </svg>
+      </div>
+      <div class="sb"><div class="sbh"><span class="sbn">PHASER BANK A</span><span class="sbv" id="pav" style="color:var(--cyan)">READY</span></div><div class="bt"><div class="bf bc" id="bpa" style="width:100%"></div></div></div>
+      <div class="sb"><div class="sbh"><span class="sbn">PHASER BANK B</span><span class="sbv" id="pbv" style="color:var(--cyan)">READY</span></div><div class="bt"><div class="bf bc" id="bpb" style="width:100%"></div></div></div>
+    </div>
+    <div class="panel" style="flex:0 0 auto;">
+      <div class="pt">Missile Complement</div>
+      <div class="mg" id="mgrid"></div>
+      <div style="margin-top:7px;display:flex;justify-content:space-between;font-size:0.58rem;">
+        <span style="color:rgba(160,216,239,0.45)">REMAINING</span>
+        <span style="color:var(--cyan);font-family:var(--disp);font-size:0.72rem;" id="mcnt">24 / 24</span>
+      </div>
+      <div class="pt" style="margin-top:10px;">Quantum Torpedoes</div>
+      <div class="tg" id="tgrid"></div>
+      <div style="margin-top:6px;display:flex;justify-content:space-between;font-size:0.58rem;">
+        <span style="color:rgba(160,216,239,0.45)">REMAINING</span>
+        <span style="color:var(--amber);font-family:var(--disp);font-size:0.72rem;" id="tcnt">8 / 8</span>
+      </div>
+    </div>
+    <div class="panel" style="flex:1;overflow:hidden;">
+      <div class="pt">Combat / Systems Log</div>
+      <div id="log" style="overflow:hidden;height:calc(100% - 24px);"></div>
+    </div>
+  </div>
 
-    const stars = [];
+  <div id="bottombar">
+    <div class="bs"><span class="bsl">Speed</span><span class="bsv" id="bspd">WARP 6.2</span></div>
+    <div class="bs"><span class="bsl">Heading</span><span class="bsv" id="bhdg">224° / 017°</span></div>
+    <div class="bs"><span class="bsl">Position</span><span class="bsv" id="bpos">X:2847 Y:-1203 Z:394</span></div>
+    <div class="bs"><span class="bsl">Crew</span><span class="bsv">847</span></div>
+    <div class="bs"><span class="bsl">Contacts</span><span class="bsv" id="bcon">3 VESSELS</span></div>
+    <div class="bs"><span class="bsl">Destination</span><span class="bsv">PROXIMA RELAY</span></div>
+    <div class="bs" style="margin-left:auto;"><span class="bsl">ETA</span><span class="bsv" id="beta">04:32:17</span></div>
+  </div>
+</div>
 
-    function resize() {
-      W = canvas.width  = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-      cx = W / 2;
-      cy = H / 2;
-    }
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ════════════════════════════════════════
+   STARFIELD BACKGROUND (2D canvas)
+════════════════════════════════════════ */
+const bg=document.getElementById('bg'),bgx=bg.getContext('2d');
+let BW,BH;const BST=[];
+function initBg(){BW=bg.width=innerWidth;BH=bg.height=innerHeight;BST.length=0;for(let i=0;i<500;i++){const s={x:(Math.random()-.5)*BW*3,y:(Math.random()-.5)*BH*3,z:Math.random()*1000};s.pz=s.z;BST.push(s);}}
+function drawBg(){bgx.fillStyle='rgba(2,13,20,0.28)';bgx.fillRect(0,0,BW,BH);const cx=BW/2,cy=BH/2;for(let i=0;i<BST.length;i++){const s=BST[i],pz=s.pz;s.pz=s.z;s.z-=2.2;if(s.z<=1){s.x=(Math.random()-.5)*BW*3;s.y=(Math.random()-.5)*BH*3;s.z=1000;s.pz=1000;continue;}const sc=1000/s.z,psc=1000/pz,sx=s.x*sc+cx,sy=s.y*sc+cy,px=s.x*psc+cx,py=s.y*psc+cy;if(sx<0||sx>BW||sy<0||sy>BH)continue;const b=1-s.z/1000;bgx.beginPath();bgx.moveTo(px,py);bgx.lineTo(sx,sy);bgx.strokeStyle=`rgba(${110+(b*145|0)},${150+(b*100|0)},255,${b*.7})`;bgx.lineWidth=b*1.5;bgx.stroke();}requestAnimationFrame(drawBg);}
+window.addEventListener('resize',()=>{initBg();resizeSM();});
+initBg();drawBg();
 
-    function randomStar() {
-      return {
-        x: (Math.random() - 0.5) * W * 3,
-        y: (Math.random() - 0.5) * H * 3,
-        z: Math.random() * MAX_DEPTH,
-        pz: 0,
-      };
-    }
+/* ════════════════════════════════════════
+   THREE.JS 3D STARMAP
+════════════════════════════════════════ */
+const smCanvas = document.getElementById('smcanvas');
+const renderer = new THREE.WebGLRenderer({canvas:smCanvas, antialias:true, alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x000810);
+renderer.shadowMap.enabled = true;
 
-    function init() {
-      stars.length = 0;
-      for (let i = 0; i < STAR_COUNT; i++) {
-        const s = randomStar();
-        s.pz = s.z; // start with pz == z so no streak on frame 0
-        stars.push(s);
-      }
-    }
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x000810, 0.0018);
 
-    function project(x, y, z) {
-      const scale = MAX_DEPTH / z;
-      return {
-        sx: x * scale + cx,
-        sy: y * scale + cy,
-        r: Math.max(0.3, (1 - z / MAX_DEPTH) * 2.5),
-      };
-    }
+const camera = new THREE.PerspectiveCamera(48, 1, 0.5, 3000);
+let camTheta=0.3, camPhi=0.52, camRadius=320;
+let isDrag=false, prevMX=0, prevMY=0, autoRot=true;
 
-    function draw() {
-      ctx.fillStyle = "rgba(0,0,0,0.25)";
-      ctx.fillRect(0, 0, W, H);
+function setCam(){
+  camera.position.set(
+    camRadius*Math.sin(camTheta)*Math.sin(camPhi),
+    camRadius*Math.cos(camPhi),
+    camRadius*Math.cos(camTheta)*Math.sin(camPhi)
+  );
+  camera.lookAt(0,10,0);
+}
+setCam();
 
-      for (const s of stars) {
-        const prev = project(s.x, s.y, s.pz);
-        s.pz = s.z;
-        s.z -= SPEED;
+function resizeSM(){
+  const p=document.getElementById('smpanel');
+  const W=p.clientWidth, H=p.clientHeight;
+  renderer.setSize(W,H);
+  camera.aspect=W/H;
+  camera.updateProjectionMatrix();
+}
+setTimeout(resizeSM,60);
 
-        if (s.z <= 1) {
-          Object.assign(s, randomStar());
-          s.z = MAX_DEPTH;
-          s.pz = MAX_DEPTH;
-          continue;
-        }
+/* ── Mouse orbit ── */
+smCanvas.addEventListener('mousedown',e=>{isDrag=true;autoRot=false;prevMX=e.clientX;prevMY=e.clientY;});
+window.addEventListener('mousemove',e=>{if(!isDrag)return;camTheta-=(e.clientX-prevMX)*0.008;camPhi=Math.max(0.12,Math.min(1.35,camPhi-(e.clientY-prevMY)*0.008));prevMX=e.clientX;prevMY=e.clientY;setCam();});
+window.addEventListener('mouseup',()=>{isDrag=false;});
+smCanvas.addEventListener('wheel',e=>{camRadius=Math.max(100,Math.min(700,camRadius+e.deltaY*0.4));setCam();e.preventDefault();},{passive:false});
+smCanvas.addEventListener('touchstart',e=>{isDrag=true;autoRot=false;prevMX=e.touches[0].clientX;prevMY=e.touches[0].clientY;},{passive:true});
+window.addEventListener('touchmove',e=>{if(!isDrag)return;camTheta-=(e.touches[0].clientX-prevMX)*0.01;camPhi=Math.max(0.12,Math.min(1.35,camPhi-(e.touches[0].clientY-prevMY)*0.01));prevMX=e.touches[0].clientX;prevMY=e.touches[0].clientY;setCam();},{passive:true});
+window.addEventListener('touchend',()=>isDrag=false);
 
-        const cur = project(s.x, s.y, s.z);
+/* ── Shaders ── */
+const PLANET_VS=`
+  varying vec3 vN; varying vec2 vUv; varying vec3 vVP;
+  void main(){vN=normalize(normalMatrix*normal);vUv=uv;vVP=-(modelViewMatrix*vec4(position,1.0)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}
+`;
+const PLANET_FS=`
+  uniform vec3 uC1,uC2,uLit; uniform float uTime;
+  varying vec3 vN; varying vec2 vUv; varying vec3 vVP;
+  float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+  float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+  float fbm(vec2 p){float v=0.;float a=.5;for(int i=0;i<5;i++){v+=a*n(p);p*=2.1;a*=.5;}return v;}
+  void main(){
+    float lat=vUv.y+fbm(vUv*4.+uTime*.015)*.45;
+    float bands=sin(lat*10.)*.5+.5;
+    float spots=fbm(vUv*9.-uTime*.008);
+    vec3 col=mix(uC1,uC2,bands*.6+spots*.4);
+    float diff=max(dot(vN,uLit),0.)*.82+.18;
+    col*=diff;
+    vec3 vd=normalize(vVP);
+    float rim=pow(1.-max(dot(vN,vd),0.),2.8);
+    col+=uC1*rim*.5;
+    gl_FragColor=vec4(col,1.);
+  }
+`;
+const SWEEP_VS=`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
+const SWEEP_FS=`uniform float uA;varying vec2 vUv;void main(){vec2 p=vUv*2.-1.;float l=length(p);if(l>1.){gl_FragColor=vec4(0.);return;}float a=atan(p.y,p.x);float da=mod(a-uA+6.2832,6.2832);float sw=da<2.2?pow((2.2-da)/2.2,2.)*.28:0.;gl_FragColor=vec4(0.,0.9,1.,sw*(1.-l*.75));}`;
+const GLOW_FS=`uniform vec3 uC;uniform float uO;varying vec3 vN;varying vec3 vVP;void main(){vec3 vd=normalize(vVP);float rim=pow(1.-max(dot(vN,vd),0.),1.8);gl_FragColor=vec4(uC,rim*uO);}`;
 
-        // skip stars outside viewport
-        if (cur.sx < 0 || cur.sx > W || cur.sy < 0 || cur.sy > H) continue;
+/* ── Lighting ── */
+scene.add(new THREE.AmbientLight(0x112244,0.5));
+const sunLight=new THREE.PointLight(0xffcc88,2.5,800);
+sunLight.position.set(-78,60,39); // near Sigma Draconis
+scene.add(sunLight);
+scene.add(new THREE.HemisphereLight(0x001133,0x000000,0.3));
 
-        const brightness = 1 - s.z / MAX_DEPTH;
-        const alpha = Math.min(1, brightness * 1.5);
+/* ── Background star particles ── */
+(()=>{
+  const geo=new THREE.BufferGeometry();
+  const pos=new Float32Array(2000*3),col2=new Float32Array(2000*3);
+  for(let i=0;i<2000;i++){
+    const r=900+Math.random()*100;
+    const th=Math.random()*Math.PI*2,ph=Math.acos(2*Math.random()-1);
+    pos[i*3]=r*Math.sin(ph)*Math.cos(th);
+    pos[i*3+1]=r*Math.sin(ph)*Math.sin(th);
+    pos[i*3+2]=r*Math.cos(ph);
+    const t=Math.random();
+    col2[i*3]=0.6+t*.4; col2[i*3+1]=0.7+t*.3; col2[i*3+2]=0.8+t*.2;
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(col2,3));
+  scene.add(new THREE.Points(geo,new THREE.PointsMaterial({size:1.2,vertexColors:true,transparent:true,opacity:.9})));
+})();
 
-        // streak
-        ctx.beginPath();
-        ctx.moveTo(prev.sx, prev.sy);
-        ctx.lineTo(cur.sx, cur.sy);
-        ctx.strokeStyle = `rgba(${lerp(120,255,brightness)},${lerp(160,255,brightness)},255,${alpha * 0.6})`;
-        ctx.lineWidth = cur.r * 0.8;
-        ctx.stroke();
+/* ── Galactic plane grid ── */
+const gridH=new THREE.GridHelper(300,15,0x003355,0x001a2e);
+gridH.position.y=-0.5;
+scene.add(gridH);
 
-        // dot
-        ctx.beginPath();
-        ctx.arc(cur.sx, cur.sy, cur.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(200,230,255,${alpha})`;
-        ctx.fill();
-      }
+const planeGeo=new THREE.PlaneGeometry(300,300);
+planeGeo.rotateX(-Math.PI/2);
+scene.add(new THREE.Mesh(planeGeo,new THREE.MeshBasicMaterial({color:0x001122,transparent:true,opacity:.35,side:THREE.DoubleSide})));
 
-      requestAnimationFrame(draw);
-    }
+/* ── Radar sweep ── */
+const sweepMat=new THREE.ShaderMaterial({uniforms:{uA:{value:0}},vertexShader:SWEEP_VS,fragmentShader:SWEEP_FS,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
+const sweepGeo=new THREE.CircleGeometry(150,64);
+const sweepMesh=new THREE.Mesh(sweepGeo,sweepMat);
+sweepMesh.rotation.x=-Math.PI/2;
+sweepMesh.position.y=0.2;
+scene.add(sweepMesh);
 
-    function lerp(a, b, t) { return Math.round(a + (b - a) * t); }
+/* ── Range circles ── */
+[50,100,150].forEach(r=>{
+  const pts=[];
+  for(let i=0;i<=64;i++){const a=i/64*Math.PI*2;pts.push(new THREE.Vector3(Math.cos(a)*r,0.3,Math.sin(a)*r));}
+  const geo=new THREE.BufferGeometry().setFromPoints(pts);
+  scene.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:0x003355,transparent:true,opacity:.4})));
+});
 
-    window.addEventListener("resize", () => { resize(); init(); });
-    resize();
-    init();
-    draw();
-  </script>
+/* ── Helper: label sprite ── */
+function makeLabel(text,color='#00e5ff'){
+  const c=document.createElement('canvas');c.width=256;c.height=36;
+  const cx=c.getContext('2d');cx.fillStyle=color;cx.font='14px Share Tech Mono';cx.fillText(text,4,24);
+  const tex=new THREE.CanvasTexture(c);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,opacity:.85,depthWrite:false,blending:THREE.AdditiveBlending}));
+  sp.scale.set(42,6,1);
+  return sp;
+}
+
+/* ── Helper: planet ── */
+function makePlanet(radius,c1,c2,opts={}){
+  const mat=new THREE.ShaderMaterial({
+    uniforms:{uC1:{value:new THREE.Color(c1)},uC2:{value:new THREE.Color(c2)},uTime:{value:0},uLit:{value:new THREE.Vector3(0.45,0.7,0.55).normalize()}},
+    vertexShader:PLANET_VS,fragmentShader:PLANET_FS
+  });
+  const mesh=new THREE.Mesh(new THREE.SphereGeometry(radius,40,40),mat);
+  const grp=new THREE.Group();grp.add(mesh);
+  // Atmosphere
+  const atmMat=new THREE.ShaderMaterial({
+    uniforms:{uC:new THREE.Uniform(new THREE.Color(c1)),uO:{value:0.7}},
+    vertexShader:PLANET_VS.replace('vUv=uv;',''),fragmentShader:GLOW_FS,
+    transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.BackSide
+  });
+  grp.add(new THREE.Mesh(new THREE.SphereGeometry(radius*1.14,32,32),atmMat));
+  // Optional ring
+  if(opts.ring){
+    const rGeo=new THREE.TorusGeometry(radius*1.9,radius*.18,4,64);
+    const rMat=new THREE.MeshBasicMaterial({color:new THREE.Color(c2).multiplyScalar(1.3),transparent:true,opacity:.5,side:THREE.DoubleSide});
+    const ring=new THREE.Mesh(rGeo,rMat);
+    ring.rotation.x=Math.PI/2.5;
+    grp.add(ring);
+  }
+  return {grp,mat};
+}
+
+/* ── Helper: ship shape ── */
+function makeShip(color,scale=1){
+  const grp=new THREE.Group();
+  const col=new THREE.Color(color);
+  const mat=new THREE.MeshPhongMaterial({color:col,emissive:col.clone().multiplyScalar(.2),shininess:80});
+  const body=new THREE.Mesh(new THREE.ConeGeometry(1.8*scale,8*scale,4),mat);
+  body.rotation.x=Math.PI/2; grp.add(body);
+  const wmat=new THREE.MeshPhongMaterial({color:col.clone().multiplyScalar(.6),emissive:col.clone().multiplyScalar(.1)});
+  [-1,1].forEach(s=>{
+    const w=new THREE.Mesh(new THREE.BoxGeometry(5*scale,.25*scale,3*scale),wmat);
+    w.position.set(s*3.2*scale,0,scale); grp.add(w);
+  });
+  const glow=new THREE.Mesh(new THREE.SphereGeometry(1.4*scale,8,8),
+    new THREE.MeshBasicMaterial({color,transparent:true,opacity:.7,blending:THREE.AdditiveBlending,depthWrite:false}));
+  glow.position.z=4.2*scale; grp.add(glow);
+  return grp;
+}
+
+/* ── Helper: station ── */
+function makeStation(){
+  const grp=new THREE.Group();
+  const mat=new THREE.MeshPhongMaterial({color:0x3355aa,emissive:0x001133,shininess:60});
+  grp.add(new THREE.Mesh(new THREE.CylinderGeometry(5,5,4,8),mat));
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(13,1.8,8,32),mat);
+  ring.rotation.x=Math.PI/2; grp.add(ring);
+  const amat=new THREE.MeshPhongMaterial({color:0x224466,emissive:0x001122});
+  for(let i=0;i<4;i++){
+    const arm=new THREE.Mesh(new THREE.CylinderGeometry(.7,.7,13,4),amat);
+    arm.rotation.z=Math.PI/2;
+    const a=i*Math.PI/2; arm.position.set(Math.cos(a)*6.5,0,Math.sin(a)*6.5); arm.rotation.y=-a;
+    grp.add(arm);
+  }
+  // Light arrays
+  const lmat=new THREE.MeshBasicMaterial({color:0x00aaff});
+  [-1,1].forEach(s=>{const l=new THREE.Mesh(new THREE.SphereGeometry(.8,4,4),lmat);l.position.set(s*13,2,0);grp.add(l);});
+  grp.add(new THREE.PointLight(0x0066ff,1.5,80));
+  return grp;
+}
+
+/* ── Helper: gate ── */
+function makeGate(){
+  const grp=new THREE.Group();
+  const mat=new THREE.MeshPhongMaterial({color:0x00ccff,emissive:0x003366,shininess:100});
+  grp.add(new THREE.Mesh(new THREE.TorusGeometry(11,1.4,8,40),mat));
+  const portal=new THREE.Mesh(new THREE.CircleGeometry(10,40),
+    new THREE.MeshBasicMaterial({color:0x0044ff,transparent:true,opacity:.12,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,depthWrite:false}));
+  grp.add(portal);
+  grp.add(new THREE.PointLight(0x0088ff,1.2,60));
+  return grp;
+}
+
+/* ── Helper: anomaly ── */
+function makeAnomaly(color){
+  const grp=new THREE.Group();
+  const col=new THREE.Color(color);
+  grp.add(new THREE.Mesh(new THREE.SphereGeometry(7,16,16),
+    new THREE.MeshBasicMaterial({color:0x050010})));
+  for(let i=0;i<3;i++){
+    const t=new THREE.Mesh(new THREE.TorusGeometry(9+i*4,.5,4,40),
+      new THREE.MeshBasicMaterial({color,transparent:true,opacity:.35-i*.08,blending:THREE.AdditiveBlending,depthWrite:false}));
+    t.rotation.set(Math.PI/2+i*.5,i*.7,0); grp.add(t);
+  }
+  grp.add(new THREE.PointLight(col,1,70));
+  return grp;
+}
+
+/* ── Helper: star (Sigma Draconis) ── */
+function makeStar3D(){
+  const grp=new THREE.Group();
+  grp.add(new THREE.Mesh(new THREE.SphereGeometry(10,24,24),
+    new THREE.MeshBasicMaterial({color:0xffee88})));
+  [1.2,1.45,1.8].forEach((s,i)=>{
+    grp.add(new THREE.Mesh(new THREE.SphereGeometry(10*s,16,16),
+      new THREE.MeshBasicMaterial({color:0xff8800,transparent:true,opacity:.12-i*.03,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.BackSide})));
+  });
+  return grp;
+}
+
+/* ── Helper: asteroid belt ── */
+function makeAsteroidBelt(){
+  const grp=new THREE.Group();
+  const mat=new THREE.MeshPhongMaterial({color:0x445533,emissive:0x111100});
+  for(let i=0;i<28;i++){
+    const r=11+Math.random()*8,a=(i/28)*Math.PI*2;
+    const rock=new THREE.Mesh(new THREE.IcosahedronGeometry(.8+Math.random()*1.5,0),mat);
+    rock.position.set(Math.cos(a)*r,(Math.random()-.5)*3,Math.sin(a)*r);
+    rock.rotation.set(Math.random()*Math.PI,Math.random()*Math.PI,Math.random()*Math.PI);
+    grp.add(rock);
+  }
+  return grp;
+}
+
+/* ── Map system positions to 3D ── */
+function toXZ(sx,sy){return[( sx-.5)*260,(sy-.5)*260];}
+
+/* ════════ SYSTEMS ════════ */
+const SYSTEMS=[
+  {n:'PROXIMA RELAY',  x:.72,y:.22,f:'UES',     obj:makeStation()},
+  {n:'KEPLER-442',     x:.55,y:.38,f:'UES',     obj:makePlanet(9,.18,.42,.08,{}).grp, mat:makePlanet(9,.18,.42,.08,{}).mat},
+  {n:'VEGA PRIME',     x:.18,y:.30,f:'neutral', obj:makePlanet(7,.35,.28,.22,{}).grp},
+  {n:'DARK REACH',     x:.82,y:.70,f:'unknown', obj:makeAnomaly(0xaa00ff)},
+  {n:'SIGMA DRACONIS', x:.30,y:.65,f:'neutral', obj:makeStar3D()},
+  {n:'HELIX GATE',     x:.50,y:.80,f:'UES',     obj:makeGate()},
+  {n:'KORRIBAN BELT',  x:.10,y:.75,f:'hostile', obj:makeAsteroidBelt()},
+  {n:'NEW ATHENS',     x:.65,y:.55,f:'UES',     obj:makePlanet(10,.08,.25,.55,{ring:true}).grp},
+  {n:'VOID BREACH',    x:.40,y:.18,f:'unknown', obj:makeAnomaly(0xff4400)},
+  {n:'TARTARUS IV',    x:.88,y:.42,f:'hostile', obj:makePlanet(8,.55,.12,.08,{}).grp},
+];
+
+// Properly reconstruct planets (makePlanet returns {grp,mat})
+function mp(r,r1,g1,b1,r2,g2,b2,opts){
+  return makePlanet(r,new THREE.Color(r1,g1,b1),new THREE.Color(r2,g2,b2),opts);
+}
+const PLANET_MATS=[];
+// Replace planet-type objects with correct calls
+const planetDefs=[
+  {i:1,r:9, c1:[.08,.28,.65],c2:[.04,.12,.35],opts:{}},
+  {i:2,r:7, c1:[.45,.40,.30],c2:[.25,.22,.18],opts:{}},
+  {i:7,r:10,c1:[.06,.35,.55],c2:[.03,.15,.30],opts:{ring:true}},
+  {i:9,r:8, c1:[.65,.10,.08],c2:[.30,.05,.04],opts:{}},
+];
+planetDefs.forEach(pd=>{
+  const c1=new THREE.Color(...pd.c1),c2=new THREE.Color(...pd.c2);
+  const p=makePlanet(pd.r,c1,c2,pd.opts);
+  SYSTEMS[pd.i].obj=p.grp;
+  SYSTEMS[pd.i].pmat=p.mat;
+  PLANET_MATS.push(p.mat);
+});
+
+const factionColor={UES:'#00e5ff',hostile:'#ff3344',neutral:'#aabbcc',unknown:'#ffaa00'};
+
+SYSTEMS.forEach(s=>{
+  const [sx,sz]=toXZ(s.x,s.y);
+  s.obj.position.set(sx,8,sz);
+  scene.add(s.obj);
+  const lbl=makeLabel(s.n,factionColor[s.f]);
+  lbl.position.set(sx,22,sz);
+  scene.add(lbl);
+});
+
+/* ── Route line ── */
+(()=>{
+  const [dx,dz]=toXZ(SYSTEMS[0].x,SYSTEMS[0].y);
+  const pts=[new THREE.Vector3(0,8,0),new THREE.Vector3(dx,8,dz)];
+  const geo=new THREE.BufferGeometry().setFromPoints(pts);
+  scene.add(new THREE.Line(geo,new THREE.LineDashedMaterial({color:0x00ccff,dashSize:6,gapSize:4,transparent:true,opacity:.35})));
+})();
+
+/* ════════ CONTACT SHIPS ════════ */
+const CONTACTS=[
+  {n:'IKS RAVAGER', f:'hostile',x:.60,y:.30,vx:.0005,vz:.0003,obj:makeShip(0xff2233,1.3)},
+  {n:'FREIGHTER-09',f:'neutral',x:.45,y:.60,vx:-.0003,vz:.0004,obj:makeShip(0x8899aa,.9)},
+  {n:'UES HERALD',  f:'UES',   x:.75,y:.50,vx:-.0003,vz:-.0002,obj:makeShip(0x00aaff,1.0)},
+];
+CONTACTS.forEach(c=>{
+  const [cx,cz]=toXZ(c.x,c.y);
+  c.obj.position.set(cx,5,cz);
+  scene.add(c.obj);
+  c.lbl=makeLabel(c.n,factionColor[c.f]);
+  c.lbl.position.set(cx,14,cz);
+  scene.add(c.lbl);
+  // Ping ring (flat torus at y=1)
+  const ping=new THREE.Mesh(new THREE.TorusGeometry(12,0.4,4,32),
+    new THREE.MeshBasicMaterial({color:new THREE.Color(factionColor[c.f]),transparent:true,opacity:.5,blending:THREE.AdditiveBlending,depthWrite:false}));
+  ping.rotation.x=Math.PI/2; ping.position.set(cx,1,cz);
+  c.ping=ping; scene.add(ping);
+});
+
+/* ════════ PLAYER SHIP ════════ */
+const playerShip=makeShip(0x00ff88,1.6);
+playerShip.position.set(0,8,0);
+scene.add(playerShip);
+const playerLbl=makeLabel('◉ UES SOVEREIGNTY','#00ff88');
+playerLbl.position.set(0,20,0);
+scene.add(playerLbl);
+
+// Player ship engine glow ring
+const engRing=new THREE.Mesh(new THREE.TorusGeometry(18,0.5,4,40),
+  new THREE.MeshBasicMaterial({color:0x00ff88,transparent:true,opacity:.25,blending:THREE.AdditiveBlending,depthWrite:false}));
+engRing.rotation.x=Math.PI/2; engRing.position.y=1;
+scene.add(engRing);
+
+/* ════════ NEBULA CLOUDS ════════ */
+[{x:-60,z:30,r:80,c:0x110044},{x:80,z:-40,r:100,c:0x002244},{x:20,z:90,r:90,c:0x330011}].forEach(n=>{
+  for(let i=0;i<3;i++){
+    const m=new THREE.Mesh(new THREE.SphereGeometry(n.r*.4+i*n.r*.2,6,6),
+      new THREE.MeshBasicMaterial({color:n.c,transparent:true,opacity:.06-i*.015,side:THREE.BackSide,blending:THREE.AdditiveBlending,depthWrite:false}));
+    m.position.set(n.x+(Math.random()-.5)*30,i*15-10,n.z+(Math.random()-.5)*30);
+    scene.add(m);
+  }
+});
+
+/* ════════ ANIMATION LOOP ════════ */
+let smT=0;
+function animateSM(){
+  requestAnimationFrame(animateSM);
+  smT+=0.016;
+
+  // Auto rotate
+  if(autoRot){camTheta+=0.002;setCam();}
+
+  // Radar sweep
+  sweepMat.uniforms.uA.value=smT*.5;
+
+  // Update planet shaders
+  PLANET_MATS.forEach(m=>m.uniforms.uTime.value=smT);
+
+  // Rotate station
+  SYSTEMS[0].obj.rotation.y+=0.004;
+
+  // Rotate gate
+  SYSTEMS[5].obj.rotation.y+=0.012;
+
+  // Pulse anomalies
+  const as=0.95+Math.sin(smT*2)*.08;
+  SYSTEMS[3].obj.scale.set(as,as,as);
+  SYSTEMS[3].obj.children.forEach((c,i)=>{if(i>0)c.rotation.z+=.01*(i+1);c.rotation.y+=.008*(i+1);});
+  SYSTEMS[8].obj.scale.set(as,as,as);
+  SYSTEMS[8].obj.children.forEach((c,i)=>{if(i>0)c.rotation.x+=.012*(i+1);c.rotation.y-=.006;});
+
+  // Sigma Draconis pulse
+  SYSTEMS[4].obj.children.forEach((c,i)=>{if(i>0){const s2=1+Math.sin(smT*1.5+i)*.06;c.scale.set(s2,s2,s2);}});
+
+  // Rotate asteroid belt
+  SYSTEMS[6].obj.rotation.y+=0.006;
+
+  // Move contacts
+  CONTACTS.forEach(c=>{
+    c.x+=c.vx; c.y+=c.vz;
+    if(c.x<.05||c.x>.95)c.vx*=-1;
+    if(c.y<.05||c.y>.95)c.vz*=-1;
+    const [cx,cz]=toXZ(c.x,c.y);
+    c.obj.position.set(cx,5,cz);
+    c.obj.rotation.y+=0.03;
+    c.lbl.position.set(cx,14,cz);
+    c.ping.position.set(cx,1,cz);
+    const ps=1+Math.sin(smT*3+c.x*10)*.12;
+    c.ping.scale.set(ps,1,ps);
+  });
+
+  // Move player ship slowly
+  const px=Math.sin(smT*.07)*40, pz=Math.cos(smT*.05)*30;
+  playerShip.position.set(px,8,pz);
+  playerShip.rotation.y+=0.02;
+  playerLbl.position.set(px,20,pz);
+  engRing.position.set(px,1,pz);
+  const es=1+Math.sin(smT*4)*.15;
+  engRing.scale.set(es,1,es);
+
+  renderer.render(scene,camera);
+}
+animateSM();
+
+/* ════════════════════════════════════════
+   HUD STATE + SIMULATION
+════════════════════════════════════════ */
+const S={
+  sh:{f:96,a:94,p:100,s:97},hull:100,warp:87,life:100,sens:94,dd:91,cloak:0,
+  plasma:84,ptemp:3842,pa:100,pb:100,
+  missiles:24,mmax:24,torps:8,tmax:8,
+  alert:'green',speed:6.2,hdg:224,hdgv:17,eta:4*3600+32*60+17,
+};
+function buildMG(){const g=document.getElementById('mgrid');g.innerHTML='';for(let i=0;i<S.mmax;i++){const d=document.createElement('div');d.className='mi'+(i>=S.missiles?' spent':'');g.appendChild(d);}}
+function buildTG(){const g=document.getElementById('tgrid');g.innerHTML='';for(let i=0;i<S.tmax;i++){const d=document.createElement('div');d.className='ti'+(i>=S.torps?' spent':'');g.appendChild(d);}}
+buildMG();buildTG();
+
+const RAND=[
+  {m:'Micro-meteorite impact — forward shield absorbed.',l:'warn'},
+  {m:'Warp plasma conduit pressure nominal.',l:''},
+  {m:'Long-range sensor sweep initiated.',l:''},
+  {m:'IKS RAVAGER changing heading — intercept possible.',l:'warn'},
+  {m:'Gravitational anomaly detected at bearing 182.',l:'warn'},
+  {m:'UES HERALD responding to hail.',l:''},
+  {m:'Torpedo targeting solution acquired.',l:''},
+  {m:'Shield harmonics adjusted — efficiency +3%.',l:''},
+  {m:'WARNING: Korriban Belt debris field ahead.',l:'crit'},
+  {m:'Enemy vessel charging weapons.',l:'crit'},
+  {m:'Evasive pattern delta engaged.',l:'warn'},
+  {m:'Deflector dish recalibrated.',l:''},
+  {m:'Structural integrity field at maximum.',l:''},
+];
+function addLog(msg,lvl=''){
+  const el=document.getElementById('log');
+  const n=new Date(),ts=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
+  const d=document.createElement('div');d.className='le'+(lvl?' '+lvl:'');
+  d.innerHTML=`<span class="ts">[${ts}]</span>${msg}`;
+  el.insertBefore(d,el.firstChild);
+  while(el.children.length>14)el.removeChild(el.lastChild);
+}
+['All systems nominal. Warp drive online.','Passive scan: 3 vessel signatures detected.','IKS RAVAGER holding position at bearing 047.','Quantum torpedo tubes loaded and armed.'].forEach((m,i)=>addLog(m,i===2?'warn':''));
+
+function shFill(p){return p>70?`rgba(0,229,255,${.1+p/220})`:p>30?`rgba(255,234,0,${.12+p/220})`:`rgba(255,23,68,${.18+p/220})`;}
+function shStroke(p){return p>70?`rgba(0,229,255,${.4+p/280})`:p>30?'rgba(255,234,0,0.7)':'rgba(255,23,68,0.8)';}
+function shTxt(p){return p>70?'#00e5ff':p>30?'#ffea00':'#ff1744';}
+function bar(id,pct,cls){const b=document.getElementById(id);if(b){b.style.width=pct+'%';b.className='bf '+cls;}}
+function val(id,txt,col){const e=document.getElementById(id);if(e){e.textContent=txt;if(col)e.style.color=col;}}
+function bCls(p){return p>70?'bc':p>30?'ba':'br2';}
+
+function upd(){
+  ['f','a','p','s'].forEach(k=>{
+    const pct=S.sh[k]|0;
+    document.getElementById('sh-'+k).setAttribute('fill',shFill(pct));
+    document.getElementById('sh-'+k).setAttribute('stroke',shStroke(pct));
+    document.getElementById('s'+k).textContent=pct+'%';
+    document.getElementById('s'+k).setAttribute('fill',shTxt(pct));
+  });
+  const avg=(S.sh.f+S.sh.a+S.sh.p+S.sh.s)/4;
+  bar('bsp',avg,bCls(avg));val('spv',(avg|0)+'%',avg>70?'var(--cyan)':avg>30?'var(--amber)':'var(--red)');
+  bar('bhull',S.hull,bCls(S.hull));val('hv',(S.hull|0)+'%',S.hull>70?'var(--green)':S.hull>30?'var(--amber)':'var(--red)');
+  bar('bwarp',S.warp,'bc');val('wv',(S.warp|0)+'%','var(--cyan)');
+  bar('blife',S.life,'bg');val('lv',(S.life|0)+'%','var(--green)');
+  bar('bsen',S.sens,'bc');val('sv',(S.sens|0)+'%','var(--cyan)');
+  bar('bdd',S.dd,'bc');val('ddv',(S.dd|0)+'%','var(--cyan)');
+  bar('bcloak',S.cloak,'ba');val('cv',S.cloak>0?(S.cloak|0)+'%':'STANDBY','var(--amber)');
+  document.getElementById('parc').setAttribute('stroke-dashoffset',(301*(1-S.plasma/100)).toFixed(1));
+  val('ppct',(S.plasma|0)+'%');
+  document.getElementById('ptemp').textContent='TEMP '+(S.ptemp|0)+'K';
+  bar('bpa',S.pa,S.pa>50?'bc':'br2');val('pav',S.pa>80?'READY':S.pa>20?'CHARGING...':'OFFLINE','var(--cyan)');
+  bar('bpb',S.pb,S.pb>50?'bc':'br2');val('pbv',S.pb>80?'READY':S.pb>20?'CHARGING...':'OFFLINE','var(--cyan)');
+  val('mcnt',`${S.missiles} / ${S.mmax}`);val('tcnt',`${S.torps} / ${S.tmax}`);
+  const badge=document.getElementById('alert-badge');
+  badge.className='alert-badge '+(S.alert==='green'?'ag':S.alert==='yellow'?'ay':'ar');
+  badge.textContent={green:'● GREEN ALERT',yellow:'▲ YELLOW ALERT',red:'■ RED ALERT'}[S.alert];
+  val('bspd','WARP '+S.speed.toFixed(1));val('bhdg',(S.hdg|0)+'° / '+(S.hdgv|0)+'°');
+  const [px2,pz2]=toXZ(.5+Math.sin(smT*.07)*.15,.5+Math.cos(smT*.05)*.12);
+  val('bpos',`X:${(px2*100|0)} Y:-1203 Z:${(pz2*100|0)}`);
+  S.eta=Math.max(0,S.eta-1);
+  const h=S.eta/3600|0,m=(S.eta%3600)/60|0,s=S.eta%60;
+  val('beta',`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+  const sd=2847+Date.now()/86400000;
+  document.getElementById('stardate').textContent='STARDATE '+sd.toFixed(3);
+}
+
+function fl(v,mn,mx,st){return Math.min(mx,Math.max(mn,v+(Math.random()-.48)*st));}
+let tc=0;
+function tick(){
+  tc++;
+  S.sh.f=fl(S.sh.f,0,100,3.5);S.sh.a=fl(S.sh.a,0,100,2.5);S.sh.p=fl(S.sh.p,0,100,2);S.sh.s=fl(S.sh.s,0,100,2);
+  S.hull=Math.min(100,S.hull+.04);S.warp=fl(S.warp,72,100,1.5);S.life=fl(S.life,97,100,.3);
+  S.sens=fl(S.sens,80,100,1.2);S.dd=fl(S.dd,80,100,1.2);
+  S.plasma=fl(S.plasma,55,100,4.5);S.ptemp=fl(S.ptemp,3100,4700,90);
+  S.pa=fl(S.pa,55,100,6);S.pb=fl(S.pb,55,100,6);
+  S.speed=fl(S.speed,5.5,7.5,.12);S.hdg=fl(S.hdg,200,260,.6);S.hdgv=fl(S.hdgv,0,45,.6);
+  const avg=(S.sh.f+S.sh.a+S.sh.p+S.sh.s)/4;
+  S.alert=avg<35||S.hull<40?'red':avg<65||S.hull<70?'yellow':'green';
+  if(tc%14===0){const ev=RAND[Math.floor(Math.random()*RAND.length)];addLog(ev.m,ev.l);if(ev.l==='crit'){const fk=['f','a','p','s'][Math.floor(Math.random()*4)];S.sh[fk]=Math.max(0,S.sh[fk]-Math.random()*30);}}
+  upd();
+}
+setInterval(tick,1000);upd();
+</script>
 </body>
 </html>
